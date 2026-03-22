@@ -30,3 +30,9 @@ Emoly is an AI-powered emotional support and chat application.
 ```bash
 npm install
 npm run dev
+
+
+## Deployed
+
+```bash
+On Render:
