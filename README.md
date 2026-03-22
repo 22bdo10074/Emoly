@@ -30,9 +30,12 @@ Emoly is an AI-powered emotional support and chat application.
 ```bash
 npm install
 npm run dev
+```
 
+## Backend Deployed On Render:
+ 
+####  https://emoly-backend.onrender.com
 
-## Deployed
+## Frontend Deployed On Vercel:
 
-```bash
-On Render:
+#### https://emoly.vercel.app/
