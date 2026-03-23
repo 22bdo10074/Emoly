@@ -4,9 +4,9 @@ import dotenv from "dotenv";
 import pkg from "pg";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import multer from "multer";
-import path from "path";
 import axios from "axios";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 dotenv.config();
 const { Pool } = pkg;
@@ -15,65 +15,58 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// STATIC FILES
-app.use("/uploads", express.static("uploads"));
+const server = createServer(app);
 
-// STORAGE
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
+const io = new Server(server, {
+  cors: { origin: "*" },
 });
 
-const upload = multer({ storage });
-
-// DB
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
 const SECRET = "mysecretkey";
 
-// ROOT
+// ================= ROOT =================
 app.get("/", (req, res) => {
   res.send("Server running 🚀");
 });
 
-// SIGNUP
-app.post("/signup", upload.single("avatar"), async (req, res) => {
+// ================= SIGNUP =================
+app.post("/signup", async (req, res) => {
   const { email, password, username } = req.body;
-  const avatar = req.file ? req.file.filename : null;
-
-  const hash = await bcrypt.hash(password, 10);
 
   try {
+    const hash = await bcrypt.hash(password, 10);
+
     await pool.query(
-      "INSERT INTO users (email, password, username, avatar) VALUES ($1,$2,$3,$4)",
-      [email, hash, username, avatar]
+      "INSERT INTO users (email, password, username) VALUES ($1,$2,$3)",
+      [email.trim(), hash, username.trim()]
     );
 
     res.json({ message: "Signup success" });
-  } catch {
-    res.json({ message: "User exists" });
+
+  } catch (err) {
+    res.json({ message: "User already exists" });
   }
 });
 
-// LOGIN
+// ================= LOGIN =================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   const result = await pool.query(
-    "SELECT * FROM users WHERE email=$1",
-    [email]
+    "SELECT * FROM users WHERE email=$1 OR username=$1",
+    [email.trim()]
   );
 
-  if (result.rows.length === 0)
+  if (result.rows.length === 0) {
     return res.json({ message: "User not found" });
+  }
 
   const user = result.rows[0];
-  const valid = await bcrypt.compare(password, user.password);
 
+  const valid = await bcrypt.compare(password, user.password);
   if (!valid) return res.json({ message: "Wrong password" });
 
   const token = jwt.sign({ userId: user.id }, SECRET);
@@ -81,15 +74,28 @@ app.post("/login", async (req, res) => {
   res.json({
     token,
     username: user.username,
-    avatar: user.avatar,
     userId: user.id,
   });
 });
 
-// CHAT
+// ================= CHAT HISTORY =================
+app.get("/messages/:userId", async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM messages WHERE user_id=$1 ORDER BY id ASC",
+    [req.params.userId]
+  );
+  res.json(result.rows);
+});
+
+// ================= AI CHAT =================
 app.post("/chat", async (req, res) => {
+  const { message, userId } = req.body;
+
   try {
-    const { message } = req.body;
+    await pool.query(
+      "INSERT INTO messages (user_id, text, sender) VALUES ($1,$2,$3)",
+      [userId, message, "user"]
+    );
 
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -104,14 +110,51 @@ app.post("/chat", async (req, res) => {
       }
     );
 
-    res.json({
-      reply:
-        response.data.choices?.[0]?.message?.content || "Hi 🤍",
-    });
+    const reply =
+      response.data.choices?.[0]?.message?.content || "Hi 🤍";
+
+    await pool.query(
+      "INSERT INTO messages (user_id, text, sender) VALUES ($1,$2,$3)",
+      [userId, reply, "bot"]
+    );
+
+    res.json({ reply });
 
   } catch {
     res.json({ reply: "Server error 😢" });
   }
 });
 
-app.listen(5000, () => console.log("🚀 Server running"));
+// ================= STRANGER CHAT =================
+let waitingUser = null;
+
+io.on("connection", (socket) => {
+
+  if (waitingUser) {
+    socket.partner = waitingUser;
+    waitingUser.partner = socket;
+
+    socket.emit("matched");
+    waitingUser.emit("matched");
+
+    waitingUser = null;
+  } else {
+    waitingUser = socket;
+  }
+
+  socket.on("send-message", (msg) => {
+    if (socket.partner) {
+      socket.partner.emit("receive-message", msg);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.partner) {
+      socket.partner.emit("stranger-left");
+      socket.partner.partner = null;
+    }
+    if (waitingUser === socket) waitingUser = null;
+  });
+});
+
+server.listen(5000, () => console.log("🚀 Server running"));

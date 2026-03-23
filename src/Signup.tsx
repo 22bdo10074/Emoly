@@ -4,50 +4,86 @@ export default function Signup({ setAuthPage }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [file, setFile] = useState<any>(null);
 
   const signup = async () => {
-    const formData = new FormData();
-    formData.append("email", email);
-    formData.append("password", password);
-    formData.append("username", username);
-    if (file) formData.append("avatar", file);
+    if (!email || !password || !username) {
+      alert("All fields required");
+      return;
+    }
 
-    await fetch("http://localhost:5000/signup", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const res = await fetch("http://localhost:5000/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          username: username.trim()
+        })
+      });
 
-    alert("Signup success");
-    setAuthPage("login");
+      const data = await res.json();
+      alert(data.message);
+
+      if (data.message === "Signup success") {
+        setAuthPage("login");
+      }
+
+    } catch (err) {
+      alert("Server error");
+    }
   };
 
   return (
-    <div className="h-screen flex justify-center items-center">
-      <div className="bg-white p-6 rounded-xl shadow w-80">
+    <div className="h-screen flex justify-center items-center bg-gradient-to-br from-[#667eea] to-[#764ba2]">
 
-        <h2 className="text-center font-bold mb-3">Signup</h2>
+      <div className="bg-white/20 backdrop-blur-2xl p-8 rounded-3xl shadow-2xl w-80 border border-white/30">
 
-        <input placeholder="Username" className="w-full mb-2 p-2 border"
-          onChange={(e)=>setUsername(e.target.value)} />
+        <h2 className="text-center text-white text-2xl font-bold mb-6">
+          Signup
+        </h2>
 
-        <input placeholder="Email" className="w-full mb-2 p-2 border"
-          onChange={(e)=>setEmail(e.target.value)} />
+        {/* Username */}
+        <input
+          placeholder="Username"
+          className="w-full mb-4 p-3 rounded-xl bg-white/80 outline-none focus:ring-2 focus:ring-blue-400"
+          value={username}
+          onChange={(e)=>setUsername(e.target.value)}
+        />
 
-        <input type="password" placeholder="Password"
-          className="w-full mb-2 p-2 border"
-          onChange={(e)=>setPassword(e.target.value)} />
+        {/* Email */}
+        <input
+          placeholder="Email"
+          className="w-full mb-4 p-3 rounded-xl bg-white/80 outline-none focus:ring-2 focus:ring-blue-400"
+          value={email}
+          onChange={(e)=>setEmail(e.target.value)}
+        />
 
-        <input type="file" className="mb-3"
-          onChange={(e)=>setFile(e.target.files?.[0])} />
+        {/* Password */}
+        <input
+          type="password"
+          placeholder="Password"
+          className="w-full mb-4 p-3 rounded-xl bg-white/80 outline-none focus:ring-2 focus:ring-blue-400"
+          value={password}
+          onChange={(e)=>setPassword(e.target.value)}
+        />
 
-        <button className="bg-green-500 text-white w-full p-2"
-          onClick={signup}>
+        {/* Button */}
+        <button
+          onClick={signup}
+          className="bg-green-500 hover:bg-green-600 transition text-white w-full p-3 rounded-xl font-semibold shadow-lg"
+        >
           Signup
         </button>
 
-        <p onClick={()=>setAuthPage("login")} className="text-blue-500 text-center mt-2 cursor-pointer">
-          Login
+        {/* Switch */}
+        <p
+          onClick={()=>setAuthPage("login")}
+          className="text-white text-center mt-4 cursor-pointer hover:underline"
+        >
+          Already have account?
         </p>
 
       </div>

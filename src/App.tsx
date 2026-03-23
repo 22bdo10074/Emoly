@@ -3,27 +3,24 @@ import Landing from "./Landing";
 import Login from "./Login";
 import Signup from "./Signup";
 import logo from "./assets/logo.png";
-import avatar from "./assets/avatar.png"; // 🔥 YOUR AVATAR
+import avatar from "./assets/avatar.png";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 
 function App() {
-  // STATES
   const [showLanding, setShowLanding] = useState(true);
   const [user, setUser] = useState(false);
   const [authPage, setAuthPage] = useState("login");
   const [userData, setUserData] = useState<any>(null);
 
-  const [mode, setMode] = useState<"ai" | "human" | null>(null);
+  const [mode, setMode] = useState<"you" | "hu" | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
   const [input, setInput] = useState("");
-  const [dark, setDark] = useState(true);
   const [typing, setTyping] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const { transcript, listening, resetTranscript } = useSpeechRecognition();
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // AUTO LOGIN
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -32,12 +29,10 @@ function App() {
     }
   }, []);
 
-  // AUTO SCROLL
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // SEND MESSAGE
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -62,17 +57,15 @@ function App() {
         "Emoly 🤖: " + data.reply,
       ]);
     } catch {
-      setMessages((prev) => [...prev, "Error: Server issue"]);
+      setMessages((prev) => [...prev, "Error"]);
     }
 
     setTyping(false);
   };
 
-  // LOGOUT
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(false);
-    setUserData(null);
     setMode(null);
     setMessages([]);
     setShowLanding(true);
@@ -93,42 +86,44 @@ function App() {
   // AUTH
   if (!user) {
     return authPage === "login" ? (
-      <Login
-        setUser={setUser}
-        setAuthPage={setAuthPage}
-        setUserData={setUserData}
-      />
+      <Login setUser={setUser} setAuthPage={setAuthPage} setUserData={setUserData} />
     ) : (
       <Signup setAuthPage={setAuthPage} />
     );
   }
 
-  // MODE SELECT
+  // MODE SELECT (UPDATED)
   if (!mode) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-300 to-indigo-400">
-        <div className="bg-white/20 backdrop-blur p-6 rounded-xl text-center w-[90%] max-w-sm">
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-[#667eea] to-[#764ba2]">
 
-          <img src={logo} className="w-14 mx-auto mb-2" />
-          <h2 className="mb-4 font-bold">Emoly 💬</h2>
+        <div className="bg-white/20 backdrop-blur-xl p-8 rounded-3xl text-center w-[90%] max-w-sm">
 
+          <img src={logo} className="w-16 mx-auto mb-4" />
+
+          <h2 className="text-white text-xl font-bold mb-4">
+            Choose Mode
+          </h2>
+
+          {/* E'm You */}
           <button
-            onClick={() => setMode("ai")}
-            className="bg-blue-500 text-white p-2 w-full mb-2 rounded"
+            onClick={() => setMode("you")}
+            className="bg-white text-black p-3 w-full mb-3 rounded-xl font-semibold"
           >
-            🤖 AI Chat
+            👤 E’m You (Human Chat)
           </button>
 
+          {/* E'm Hu */}
           <button
-            onClick={() => setMode("human")}
-            className="bg-gray-300 p-2 w-full rounded"
+            onClick={() => setMode("hu")}
+            className="bg-black text-white p-3 w-full rounded-xl font-semibold"
           >
-            👤 Stranger Chat
+            🤖 E’m Hu (AI Companion)
           </button>
 
           <button
             onClick={handleLogout}
-            className="text-red-500 mt-3"
+            className="text-red-400 mt-4"
           >
             Logout
           </button>
@@ -138,114 +133,94 @@ function App() {
     );
   }
 
-  // CHAT UI
+  // CHAT UI (FIXED FULL SCREEN)
   return (
-    <div className={`${dark ? "bg-black text-white" : "bg-gray-100"} h-screen flex justify-center`}>
-      <div className="w-full max-w-md flex flex-col h-full">
+    <div className="h-screen flex flex-col bg-[#0f172a] text-white">
 
-        {/* NAVBAR */}
-        <div className="p-3 flex justify-between items-center border-b relative">
+      {/* NAVBAR */}
+      <div className="p-4 flex justify-between items-center border-b border-white/10">
 
-          <span className="font-bold">Emoly 💬</span>
+        {/* BACK BUTTON */}
+        <button
+          onClick={() => {
+            setMode(null);
+            setMessages([]);
+          }}
+          className="text-white text-lg"
+        >
+          ⬅
+        </button>
 
-          {/* PROFILE */}
-          <div className="relative">
+        <span className="font-bold">
+          {mode === "you" ? "E’m You 👤" : "E’m Hu 🤖"}
+        </span>
 
-            <img
-              src={
-                userData?.avatar
-                  ? `http://localhost:5000/uploads/${userData.avatar}`
-                  : avatar // 🔥 CUSTOM DEFAULT AVATAR
-              }
-              className="w-9 h-9 rounded-full object-cover border-2 border-white shadow cursor-pointer"
-              onClick={() => setMenuOpen(!menuOpen)}
-            />
+        <img
+          src={avatar}
+          className="w-8 h-8 rounded-full"
+        />
+      </div>
 
-            {/* DROPDOWN */}
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 bg-white text-black rounded-lg shadow w-40 p-2 space-y-2">
+      {/* CHAT AREA */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
 
-                <button
-                  onClick={() => setDark(!dark)}
-                  className="block w-full text-left hover:bg-gray-200 p-2 rounded"
-                >
-                  {dark ? "🌙 Dark" : "☀️ Light"}
-                </button>
+        {messages.map((msg, i) => {
+          const isUser = msg.startsWith("You");
 
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left text-red-500 hover:bg-gray-200 p-2 rounded"
-                >
-                  Logout
-                </button>
+          return (
+            <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
 
+              <div className={`px-4 py-2 rounded-2xl max-w-[75%] ${
+                isUser
+                  ? "bg-blue-500"
+                  : "bg-gray-700"
+              }`}>
+                {msg.replace(/^You: |Emoly 🤖: /, "")}
               </div>
-            )}
 
-          </div>
-        </div>
+            </div>
+          );
+        })}
 
-        {/* CHAT */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {messages.map((msg, i) => {
-            const isUser = msg.startsWith("You");
+        {typing && <div className="text-gray-400">Typing...</div>}
 
-            return (
-              <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-                <div className={`px-3 py-2 rounded-lg max-w-[75%] ${
-                  isUser
-                    ? "bg-blue-500 text-white"
-                    : dark
-                    ? "bg-gray-700"
-                    : "bg-gray-200 text-black"
-                }`}>
-                  {msg.replace(/^You: |Emoly 🤖: /, "")}
-                </div>
-              </div>
-            );
-          })}
+        <div ref={bottomRef}></div>
+      </div>
 
-          {typing && <div className="text-gray-400">typing...</div>}
+      {/* INPUT BAR */}
+      <div className="p-3 flex gap-2 bg-white/5">
 
-          <div ref={bottomRef}></div>
-        </div>
+        <button
+          onClick={() => SpeechRecognition.startListening()}
+          className="bg-gray-600 px-3 py-2 rounded-full"
+        >
+          🎙
+        </button>
 
-        {/* INPUT */}
-        <div className="p-3 flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          className="flex-1 p-2 rounded-full bg-gray-200 text-black px-4"
+          placeholder={listening ? "Listening..." : "Type message..."}
+        />
 
-          <button
-            onClick={() => SpeechRecognition.startListening()}
-            className="bg-gray-500 px-3 py-2 rounded-full text-white"
-          >
-            🎙
-          </button>
+        <button
+          onClick={() => {
+            setInput(transcript);
+            resetTranscript();
+          }}
+          className="bg-green-500 px-3 py-2 rounded-full"
+        >
+          ✔
+        </button>
 
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="flex-1 p-2 rounded bg-gray-200 text-black"
-            placeholder={listening ? "Listening..." : "Type..."}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          />
+        <button
+          onClick={sendMessage}
+          className="bg-blue-500 px-4 rounded-full"
+        >
+          ➤
+        </button>
 
-          <button
-            onClick={() => {
-              setInput(transcript);
-              resetTranscript();
-            }}
-            className="bg-green-500 px-3 py-2 rounded-full text-white"
-          >
-            ✔
-          </button>
-
-          <button
-            onClick={sendMessage}
-            className="bg-blue-500 text-white px-4 rounded"
-          >
-            ➤
-          </button>
-
-        </div>
       </div>
     </div>
   );
