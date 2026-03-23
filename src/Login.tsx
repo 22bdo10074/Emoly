@@ -53,9 +53,10 @@ export default function Login({ setUser, setAuthPage }: any) {
           Login
         </button>
 
+        {/* 🔥 FIXED BUTTON */}
         <p
-          onClick={()=>setAuthPage("signup")}
-          className="text-white text-center mt-4 cursor-pointer"
+          onClick={() => setAuthPage("signup")}
+          className="text-white text-center mt-4 cursor-pointer hover:underline"
         >
           Create Account
         </p>
