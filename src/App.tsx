@@ -10,13 +10,13 @@ function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [user, setUser] = useState(false);
   const [authPage, setAuthPage] = useState("login");
-  const [userData, setUserData] = useState<any>(null);
+  
 
   const [mode, setMode] = useState<"you" | "hu" | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  
 
   const { transcript, listening, resetTranscript } = useSpeechRecognition();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -86,7 +86,8 @@ function App() {
   // AUTH
   if (!user) {
     return authPage === "login" ? (
-      <Login setUser={setUser} setAuthPage={setAuthPage} setUserData={setUserData} />
+      <Login setUser={setUser} setAuthPage={setAuthPage} />
+      
     ) : (
       <Signup setAuthPage={setAuthPage} />
     );
