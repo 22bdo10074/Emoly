@@ -1,0 +1,145 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 1rem;
+    /* Emoly palette in OKLCH raw L C H */
+    --background: 0.93 0.018 285;
+    --foreground: 0.185 0.02 15;
+    --card: 0.98 0.01 285;
+    --card-foreground: 0.185 0.02 15;
+    --popover: 0.98 0.01 285;
+    --popover-foreground: 0.185 0.02 15;
+    --primary: 0.58 0.07 22;
+    --primary-foreground: 0.98 0 0;
+    --secondary: 0.924 0.025 285;
+    --secondary-foreground: 0.42 0.02 15;
+    --muted: 0.924 0.025 285;
+    --muted-foreground: 0.52 0.025 15;
+    --accent: 0.765 0.075 285;
+    --accent-foreground: 0.185 0.02 15;
+    --destructive: 0.67 0.11 32;
+    --destructive-foreground: 0.98 0 0;
+    --border: 0.87 0.03 285;
+    --input: 0.87 0.03 285;
+    --ring: 0.58 0.07 22;
+    --chart-1: 0.58 0.07 22;
+    --chart-2: 0.765 0.075 285;
+    --chart-3: 0.67 0.11 32;
+    --chart-4: 0.87 0.047 285;
+    --chart-5: 0.79 0.07 30;
+    --sidebar: 0.924 0.025 285;
+    --sidebar-foreground: 0.185 0.02 15;
+    --sidebar-primary: 0.58 0.07 22;
+    --sidebar-primary-foreground: 0.98 0 0;
+    --sidebar-accent: 0.87 0.03 285;
+    --sidebar-accent-foreground: 0.42 0.02 15;
+    --sidebar-border: 0.87 0.03 285;
+    --sidebar-ring: 0.58 0.07 22;
+
+    /* Custom Emoly tokens */
+    --emoly-brand: oklch(0.58 0.07 22);
+    --emoly-lavender-btn-from: oklch(0.765 0.075 285);
+    --emoly-lavender-btn-to: oklch(0.72 0.075 285);
+    --emoly-coral-btn-from: oklch(0.67 0.11 32);
+    --emoly-coral-btn-to: oklch(0.63 0.11 32);
+    --emoly-card-blue: oklch(0.924 0.025 240);
+    --emoly-card-peach: oklch(0.933 0.04 55);
+    --emoly-footer-from: oklch(0.22 0.02 15);
+    --emoly-footer-to: oklch(0.17 0.02 15);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  body {
+    @apply text-foreground;
+    background: linear-gradient(
+      135deg,
+      #d9d7f5 0%,
+      #cfe0f2 30%,
+      #f6d2c8 70%,
+      #f1b9a9 100%
+    );
+    min-height: 100vh;
+    background-attachment: fixed;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@layer utilities {
+  .font-serif-display {
+    font-family: "Playfair Display", Georgia, serif;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .glass-nav {
+    background: rgba(233, 230, 243, 0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+  }
+
+  .btn-lavender {
+    background: linear-gradient(135deg, #b9b6e8 0%, #a7a3da 100%);
+    color: #2a1f22;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-lavender:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+
+  .btn-coral {
+    background: linear-gradient(135deg, #e48a73 0%, #d97761 100%);
+    color: #fff;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-coral:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+
+  .btn-brand {
+    background: linear-gradient(135deg, #b77c73 0%, #a06860 100%);
+    color: #fff;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-brand:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  .mood-pill {
+    transition: all 0.2s ease;
+  }
+  .mood-pill:hover {
+    transform: scale(1.12);
+  }
+  .mood-pill.selected {
+    box-shadow: 0 0 0 3px rgba(183, 124, 115, 0.5), 0 0 16px
+      rgba(183, 124, 115, 0.3);
+    background: rgba(183, 124, 115, 0.18);
+  }
+}
