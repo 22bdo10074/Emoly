@@ -1,11 +1,94 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Send, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import type { Story } from "../hooks/useQueries";
-import { useGetStoriesByTheme } from "../hooks/useQueries";
+
+interface Story {
+  id: number;
+  theme: string;
+  title: string;
+  excerpt: string;
+  body: string;
+}
+
+const STORIES: Story[] = [
+  {
+    id: 1,
+    theme: "loneliness",
+    title: "The Empty Room",
+    excerpt:
+      "Some nights the silence feels heavier than anything you've ever carried...",
+    body: "Some nights the silence feels heavier than anything you've ever carried. You lie there, listening to nothing, and somehow that nothing is deafening. You reach for your phone, scroll without seeing, put it down. The room is the same as always, but tonight it feels like it's pressing in on you.",
+  },
+  {
+    id: 2,
+    theme: "loneliness",
+    title: "The Crowded Room",
+    excerpt: "You were surrounded by people, yet felt completely invisible...",
+    body: "You were surrounded by people — laughter, conversation, the warmth of others. And yet you sat there, completely invisible. No one noticed when you went quiet. No one asked how you were really doing. You smiled when smiled at, laughed when laughed at, and somehow that made it worse.",
+  },
+  {
+    id: 3,
+    theme: "anxiety",
+    title: "The Spiral",
+    excerpt:
+      "Your mind started with one small thought and somehow ended up at the worst...",
+    body: "It started with one small thought. Then another. Then another. Before you knew it, your mind had traveled from a minor mistake at work all the way to imagining your entire life falling apart. You know logically that you're spiraling. You know the thoughts aren't facts. But knowing doesn't stop the feeling.",
+  },
+  {
+    id: 4,
+    theme: "anxiety",
+    title: "Before the Big Day",
+    excerpt:
+      "The night before felt impossible. Your heart wouldn't slow down...",
+    body: "The night before felt impossible. You went to bed early because you knew you needed rest, but your heart wouldn't slow down. You rehearsed every possible outcome. You planned what to say if things went wrong. You barely slept. And when morning came, you were already exhausted before it even began.",
+  },
+  {
+    id: 5,
+    theme: "heartbreak",
+    title: "The Last Message",
+    excerpt:
+      "You read it again. And again. Trying to find something you missed...",
+    body: "You read it again. And again. You looked for a hidden meaning, something you might have missed, some clue that it wasn't really over. But the words stayed the same. You put your phone down, picked it up, reread it. You don't know why you keep doing this. Maybe because as long as you're reading it, you don't have to accept it.",
+  },
+  {
+    id: 6,
+    theme: "heartbreak",
+    title: "Seeing Them Move On",
+    excerpt: "You weren't ready to see them happy without you...",
+    body: "You weren't ready. You thought you were — you told yourself you were — but then you saw it. They looked happy. Genuinely happy. And something in you cracked open that you thought had already healed. You're not angry. You don't even wish them harm. You just weren't ready to be so replaceable.",
+  },
+  {
+    id: 7,
+    theme: "self-doubt",
+    title: "Not Good Enough",
+    excerpt:
+      "Everyone else seemed to have it figured out. You felt two steps behind...",
+    body: "Everyone else seemed to have it figured out. They moved through the world with a confidence you couldn't access. They knew what to say, what to do, where to go. You were two steps behind, pretending to keep up, smiling like you weren't constantly wondering if you were enough.",
+  },
+  {
+    id: 8,
+    theme: "self-doubt",
+    title: "The Mistake",
+    excerpt: "You kept replaying it. Wishing you could take it back...",
+    body: "You kept replaying it. The moment you said the wrong thing, made the wrong call, showed up in the wrong way. You couldn't stop hearing it back in your head. Everyone else had probably moved on. But you couldn't let yourself off the hook. Not yet. Maybe not ever.",
+  },
+  {
+    id: 9,
+    theme: "burnout",
+    title: "Running on Empty",
+    excerpt: "You couldn't remember the last time you felt rested...",
+    body: "You couldn't remember the last time you felt genuinely rested. Not just physically — soul-rested. The kind of tired you felt wasn't something sleep could fix. You'd been going and going for so long that stopping felt dangerous, like if you paused even for a moment, everything would catch up to you at once.",
+  },
+  {
+    id: 10,
+    theme: "burnout",
+    title: "Just One More Thing",
+    excerpt: "You kept saying yes when every part of you wanted to say no...",
+    body: "You kept saying yes. To the extra task. To the favor. To the request that came in at 9pm. Every part of you wanted to say no, but you smiled and said of course. You told yourself this was temporary, that things would slow down soon. But soon never came, and you kept giving what you didn't have left to give.",
+  },
+];
 
 const THEMES = [
   { key: "all", label: "All" },
@@ -34,7 +117,7 @@ const THEME_TEXT: Record<string, string> = {
   all: "#374151",
 };
 
-const SKELETON_KEYS = ["sk-a", "sk-b", "sk-c", "sk-d", "sk-e", "sk-f"];
+const _SKELETON_KEYS = ["sk-a", "sk-b", "sk-c", "sk-d", "sk-e", "sk-f"];
 
 type CompanionScript = {
   opening: string;
@@ -107,8 +190,7 @@ const DEFAULT_SCRIPT: CompanionScript = {
 
 function getCompanionReply(theme: string, turn: number): string {
   const script = COMPANION_SCRIPTS[theme] ?? DEFAULT_SCRIPT;
-  const turns = script.turns;
-  return turns[Math.min(turn, turns.length - 1)];
+  return script.turns[Math.min(turn, script.turns.length - 1)];
 }
 
 interface ChatEntry {
@@ -131,29 +213,33 @@ function CompanionChatModal({ story, onClose }: CompanionChatModalProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [turn, setTurn] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   });
 
-  async function handleSend() {
+  function handleSend() {
     const text = input.trim();
     if (!text || isTyping) return;
     setInput("");
+
     const userMsgId = `user-${Date.now()}`;
     setMessages((prev) => [...prev, { role: "user", text, id: userMsgId }]);
     setIsTyping(true);
 
-    await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
-
-    const reply = getCompanionReply(story.theme, turn);
-    const compMsgId = `comp-${Date.now()}`;
-    setMessages((prev) => [
-      ...prev,
-      { role: "companion", text: reply, id: compMsgId },
-    ]);
-    setTurn((t) => t + 1);
-    setIsTyping(false);
+    const delay = 1200 + Math.random() * 800;
+    setTimeout(() => {
+      const reply = getCompanionReply(story.theme, turn);
+      const compMsgId = `comp-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        { role: "companion", text: reply, id: compMsgId },
+      ]);
+      setTurn((t) => t + 1);
+      setIsTyping(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }, delay);
   }
 
   return (
@@ -175,10 +261,11 @@ function CompanionChatModal({ story, onClose }: CompanionChatModalProps) {
         transition={{ duration: 0.35 }}
         className="w-full max-w-lg flex flex-col rounded-3xl shadow-card-lg overflow-hidden"
         style={{
-          background: "rgba(255,255,255,0.92)",
+          background: "rgba(255,255,255,0.96)",
           backdropFilter: "blur(20px)",
           border: "1px solid rgba(255,255,255,0.7)",
           maxHeight: "88vh",
+          minHeight: "480px",
         }}
       >
         {/* Modal header */}
@@ -204,9 +291,6 @@ function CompanionChatModal({ story, onClose }: CompanionChatModalProps) {
             >
               {story.title}
             </h2>
-            <p className="text-xs truncate mt-0.5" style={{ color: "#9E8C8E" }}>
-              {story.excerpt}
-            </p>
           </div>
           <button
             type="button"
@@ -251,7 +335,7 @@ function CompanionChatModal({ story, onClose }: CompanionChatModalProps) {
                 style={{
                   background:
                     msg.role === "companion"
-                      ? "rgba(247,228,211,0.75)"
+                      ? "rgba(247,228,211,0.85)"
                       : "rgba(183,124,115,0.18)",
                   color: "#2A1F22",
                   borderRadius:
@@ -287,7 +371,7 @@ function CompanionChatModal({ story, onClose }: CompanionChatModalProps) {
                 <div
                   className="rounded-2xl px-4 py-3"
                   style={{
-                    background: "rgba(247,228,211,0.75)",
+                    background: "rgba(247,228,211,0.85)",
                     borderRadius: "4px 18px 18px 18px",
                   }}
                 >
@@ -316,19 +400,28 @@ function CompanionChatModal({ story, onClose }: CompanionChatModalProps) {
 
         {/* Input bar */}
         <div
-          className="shrink-0 px-4 pb-4 pt-3"
+          className="shrink-0 px-4 pb-5 pt-3"
           style={{ borderTop: "1px solid rgba(42,31,34,0.07)" }}
         >
           <div
             className="flex gap-2 items-end rounded-2xl p-2"
-            style={{ background: "rgba(42,31,34,0.04)" }}
+            style={{
+              background: "rgba(42,31,34,0.04)",
+              border: "1px solid rgba(183,124,115,0.15)",
+            }}
           >
-            <Textarea
+            <textarea
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message..."
-              className="flex-1 min-h-[44px] max-h-28 text-sm resize-none rounded-xl border-0 focus-visible:ring-0 bg-transparent"
-              style={{ color: "#2A1F22" }}
+              rows={2}
+              className="flex-1 text-sm resize-none rounded-xl border-0 outline-none bg-transparent px-2 py-1.5"
+              style={{
+                color: "#2A1F22",
+                minHeight: "44px",
+                maxHeight: "112px",
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -339,9 +432,17 @@ function CompanionChatModal({ story, onClose }: CompanionChatModalProps) {
             />
             <button
               type="button"
-              className="btn-coral w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
               onClick={handleSend}
               disabled={!input.trim() || isTyping}
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all"
+              style={{
+                background:
+                  input.trim() && !isTyping
+                    ? "linear-gradient(135deg,#e48a73,#c96b58)"
+                    : "rgba(183,124,115,0.2)",
+                color: input.trim() && !isTyping ? "#fff" : "#B77C73",
+                cursor: input.trim() && !isTyping ? "pointer" : "not-allowed",
+              }}
               data-ocid="companionmodal.submit_button"
             >
               <Send size={14} />
@@ -368,11 +469,10 @@ export default function EmHuPage() {
   const [activeTheme, setActiveTheme] = useState("all");
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
-  const { data: stories, isLoading } = useGetStoriesByTheme(activeTheme);
-
-  function handleCloseModal() {
-    setSelectedStory(null);
-  }
+  const stories =
+    activeTheme === "all"
+      ? STORIES
+      : STORIES.filter((s) => s.theme === activeTheme);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -455,86 +555,59 @@ export default function EmHuPage() {
           </div>
 
           {/* Story Grid */}
-          {isLoading ? (
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-              data-ocid="emhu.loading_state"
-            >
-              {SKELETON_KEYS.map((k) => (
-                <div key={k} className="glass-card rounded-2xl p-5 space-y-3">
-                  <Skeleton className="h-4 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-9 w-full rounded-xl" />
-                </div>
-              ))}
-            </div>
-          ) : stories && stories.length > 0 ? (
-            <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-              initial="hidden"
-              animate="visible"
-              variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
-            >
-              {stories.map((story, idx) => (
-                <motion.div
-                  key={String(story.id)}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { opacity: 1, y: 0 },
-                  }}
-                  className="glass-card rounded-2xl p-5 flex flex-col shadow-card hover:shadow-card-lg transition-shadow"
-                  data-ocid={`emhu.item.${idx + 1}`}
-                >
-                  <span
-                    className="text-xs font-semibold px-3 py-1 rounded-full capitalize self-start mb-3"
-                    style={{
-                      background: THEME_COLORS[story.theme] ?? "#F3F4F6",
-                      color: THEME_TEXT[story.theme] ?? "#374151",
-                    }}
-                  >
-                    {story.theme}
-                  </span>
-                  <h3
-                    className="font-serif text-lg font-bold mb-2"
-                    style={{ color: "#2A1F22" }}
-                  >
-                    {story.title}
-                  </h3>
-                  <p
-                    className="text-sm leading-relaxed flex-1 mb-4"
-                    style={{ color: "#5C5053" }}
-                  >
-                    {story.excerpt}
-                  </p>
-                  <button
-                    type="button"
-                    className="btn-coral py-2.5 px-4 rounded-xl text-sm font-semibold"
-                    onClick={() => setSelectedStory(story)}
-                    data-ocid="emhu.button"
-                  >
-                    This is me
-                  </button>
-                </motion.div>
-              ))}
-            </motion.div>
-          ) : (
-            <div
-              className="text-center glass-card rounded-2xl p-12"
-              data-ocid="emhu.empty_state"
-            >
-              <p
-                className="font-serif text-2xl mb-2"
-                style={{ color: "#2A1F22" }}
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
+          >
+            {stories.map((story, idx) => (
+              <motion.div
+                key={story.id}
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+                className="glass-card rounded-2xl p-5 flex flex-col shadow-card hover:shadow-card-lg transition-shadow"
+                data-ocid={`emhu.item.${idx + 1}`}
               >
-                No stories yet
-              </p>
-              <p className="text-sm" style={{ color: "#5C5053" }}>
-                We're adding more stories. Check back soon.
-              </p>
-            </div>
-          )}
+                <span
+                  className="text-xs font-semibold px-3 py-1 rounded-full capitalize self-start mb-3"
+                  style={{
+                    background: THEME_COLORS[story.theme] ?? "#F3F4F6",
+                    color: THEME_TEXT[story.theme] ?? "#374151",
+                  }}
+                >
+                  {story.theme}
+                </span>
+                <h3
+                  className="font-serif text-lg font-bold mb-2"
+                  style={{ color: "#2A1F22" }}
+                >
+                  {story.title}
+                </h3>
+                <p
+                  className="text-sm leading-relaxed flex-1 mb-4"
+                  style={{ color: "#5C5053" }}
+                >
+                  {story.excerpt}
+                </p>
+                <button
+                  type="button"
+                  className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                  style={{
+                    background: "linear-gradient(135deg,#e48a73,#c96b58)",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setSelectedStory(story)}
+                  data-ocid="emhu.button"
+                >
+                  This is me
+                </button>
+              </motion.div>
+            ))}
+          </motion.div>
         </motion.div>
       </main>
 
@@ -543,7 +616,7 @@ export default function EmHuPage() {
         {selectedStory && (
           <CompanionChatModal
             story={selectedStory}
-            onClose={handleCloseModal}
+            onClose={() => setSelectedStory(null)}
           />
         )}
       </AnimatePresence>

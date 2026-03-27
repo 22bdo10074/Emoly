@@ -185,10 +185,8 @@ actor Emoly {
   public query func getMessages() : async [ChatMessage] {
     let all = chatMessages;
     let size = all.size();
-    // Clamp to last 100
     let start : Nat = if (size > 100) { size - 100 } else { 0 };
     let count : Nat = size - start;
-    // Build slice then reverse for newest-first
     let slice = Array.tabulate(count, func(i : Nat) : ChatMessage { all[start + i] });
     Array.tabulate(count, func(i : Nat) : ChatMessage { slice[count - 1 - i] })
   };
